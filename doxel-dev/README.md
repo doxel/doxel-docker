@@ -17,7 +17,7 @@ docker run -itp 3001:3001 doxel/dev:latest
 
 For example with:
 ```
-xdg-open http://127.0.0.1:3001
+xdg-open http://127.0.0.1:3001/app/
 ```
 
 ## OPEN A SHELL ##
