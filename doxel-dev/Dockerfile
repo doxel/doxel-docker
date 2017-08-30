@@ -25,8 +25,8 @@ RUN sed -r -i -e s/deb.debian.org/$debian_mirror/ /etc/apt/sources.list \
  && useradd --create-home --system --shell /bin/bash $user
 USER $user
 WORKDIR /home/$user
-ARG nvm_version=v0.33.0
-ARG node_version=v6.9.4
+ARG nvm_version=v0.33.2
+ARG node_version=v6.11.1
 RUN wget -q -O /tmp/install.sh https://raw.githubusercontent.com/creationix/nvm/$nvm_version/install.sh \
  &&  . /tmp/install.sh \
  && export NVM_DIR="/home/$user/.nvm" \
@@ -39,6 +39,7 @@ RUN wget -q -O /tmp/install.sh https://raw.githubusercontent.com/creationix/nvm/
       grunt-cli \
       q \
       strongloop \
+      mongo-express \
  && git clone --recursive https://github.com/doxel/doxel-loopback.git \
  && cd doxel-loopback \
  && npm install \
@@ -52,6 +53,8 @@ RUN wget -q -O /tmp/install.sh https://raw.githubusercontent.com/creationix/nvm/
  && bower install \
  && lb-ng ../server/server.js app/scripts/lb-services.js \
  && grunt wiredep compass --force
+ADD data/mongodb.tar.gz /
+ADD data/upload.tar.gz /home/doxel/
 EXPOSE 3001
 USER root
 RUN cd /home/doxel/doxel-loopback/jpeg_metadata_size \
