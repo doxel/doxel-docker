@@ -47,21 +47,28 @@ RUN wget -q -O /tmp/install.sh https://raw.githubusercontent.com/creationix/nvm/
  && make \
  && find . -type f -executable -exec strip \{\} \; \
  && cd .. \
- && mkdir -p server/upload_dev/tmp \
+ && mkdir -p server/upload/tmp \
  && cd client \
  && npm install \
  && bower install \
+ && cd viewer \
+ && npm install \
+ && bower install \
+ && gulp wiredep \
+ && cd .. \
  && lb-ng ../server/server.js app/scripts/lb-services.js \
- && grunt wiredep compass --force
-ADD data/mongodb.tar.gz /
+ && grunt browserify wiredep compass --force
 ADD data/upload.tar.gz /home/doxel/
+ADD data/mongodb.tar.gz /
 EXPOSE 3001
 USER root
 RUN cd /home/doxel/doxel-loopback/jpeg_metadata_size \
  && make PREFIX=/usr install
+ADD /data/postinstall.sh /tmp
+RUN bash -l -c /tmp/postinstall.sh
 CMD service mongodb start \
  && su - doxel bash -l -c " \
          slc start doxel-loopback \
-      && slc ctl set-size doxel-loopback 4 \
+      && slc ctl set-size doxel-loopback \$(nproc) \
       && slc ctl log-dump doxel-loopback --follow \
     "
