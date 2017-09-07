@@ -66,7 +66,10 @@ USER root
 RUN cd /home/doxel/doxel-loopback/jpeg_metadata_size \
  && make PREFIX=/usr install
 ADD data/postinstall.sh /tmp
-RUN chmod +x /tmp/postinstall.sh \
+ADD debug.sh /root/
+ADD gitconfig /home/doxel/.gitconfig
+RUN chmod +x /root/debug.sh \
+ && chmod +x /tmp/postinstall.sh \
  && sync \
  && service mongodb start \
  && /tmp/postinstall.sh
