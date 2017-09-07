@@ -1,3 +1,7 @@
+## DOXEL-DEV ##
+
+Docker container to develop and test [doxel.org](https://www.doxel.org) [backend](https://github.com/doxel/doxel-loopback) and [frontend](https://github.com/doxel/doxel-angular)
+
 ## BUILD THE CONTAINER ##
 
 For example with:
