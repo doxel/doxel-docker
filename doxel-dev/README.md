@@ -47,7 +47,7 @@ docker rm doxel
 
 * Without the --inspect option, a backend cluster is run using slc.
 
-* When using the --inspect version, the backend is launched directly using node in a single thread, and you can click on the "Open the dedicated DevTool for Node" link displayed on chrome://inspect#devices to inspect or debug the backend code.  (You need a recent Chrome or Chromium version >= 58)
+* When using the --inspect option, the backend is launched directly using node in a single thread, and you can click on the "Open the dedicated DevTool for Node" link displayed on chrome://inspect#devices to inspect or debug the backend code.  (You need a recent Chrome or Chromium version >= 58)
 
 * When the screen session already exists only step 1 is performed
 
