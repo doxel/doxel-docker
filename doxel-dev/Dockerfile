@@ -37,6 +37,7 @@ RUN wget -q -O /tmp/install.sh https://raw.githubusercontent.com/creationix/nvm/
  && npm install -g \
       bower \
       grunt-cli \
+      gulp \
       q \
       strongloop \
       mongo-express \
@@ -64,8 +65,11 @@ EXPOSE 3001
 USER root
 RUN cd /home/doxel/doxel-loopback/jpeg_metadata_size \
  && make PREFIX=/usr install
-ADD /data/postinstall.sh /tmp
-RUN bash -l -c /tmp/postinstall.sh
+ADD data/postinstall.sh /tmp
+RUN chmod +x /tmp/postinstall.sh \
+ && sync \
+ && service mongodb start \
+ && /tmp/postinstall.sh
 CMD service mongodb start \
  && su - doxel bash -l -c " \
          slc start doxel-loopback \
