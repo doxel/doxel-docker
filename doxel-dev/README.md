@@ -11,9 +11,8 @@ DEBIAN_MIRROR=ftp.ch.debian.org NVM_VERSION=v0.33.0 NODE_VERSION=v6.9.4 build.sh
 For example with:
 ```
 docker run --name doxel -itp 3001:3001 doxel/dev:latest
-
-This will start a server cluster using slc.
 ```
+This will start a server cluster using slc.
 
 ## CONNECT WITH YOUR BROWSER ##
 
@@ -41,7 +40,10 @@ with:
 ```
 ./run.sh [ --inspect ]
 ```
-* When the container exists already it is attached or restarted, to start with a fresh container, delete it before with eg `docker rm doxel`
+* When the container exists already it is attached or restarted, to start with a fresh container, delete it before with eg 
+```
+docker rm doxel
+```
 
 * Without the --inspect option, a backend cluster is run using slc.
 
