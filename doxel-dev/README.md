@@ -4,6 +4,7 @@ For example with:
 
 ```
 DEBIAN_MIRROR=ftp.ch.debian.org NVM_VERSION=v0.33.0 NODE_VERSION=v6.9.4 build.sh 
+```
 
 ## RUN THE CONTAINER ##
 
@@ -39,7 +40,12 @@ Start (or reattach to) a screen session with (initially) 4 windows:
 with:
 ```
 ./run.sh [ --inspect ]
-`
+```
+* When the container exists already it is attached or restarted, to start with a fresh container, delete it before with eg `docker rm doxel`
+
 * Without the --inspect option, a backend cluster is run using slc.
 
 * When using the --inspect version, the backend is launched directly using node in a single thread, and you can click on the "Open the dedicated DevTool for Node" link displayed on chrome://inspect#devices to inspect or debug the backend code.  (You need a recent Chrome or Chromium version >= 58)
+
+* When the screen session already exists only step 1 is performed
+
