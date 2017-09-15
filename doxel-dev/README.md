@@ -32,20 +32,28 @@ For example with:
 ```
 docker exec -itu root doxel /bin/bash
 ```
-## ALL IN ONE ##
+## EASIER SHOULD BE BETTER ##
 
-Start (or reattach to) a screen session with:
+Instead of all the above, just use doxel.sh
+
+* This method is incompatible with Docker version 17.06.2-ce as mentionned in issue#1
+  Downgrade to docker version 17.05.0-ce if needed.
+
+It will start (or reattach to) a gnu screen session with:
 1. The container running
-2. A shell as root user in the container
-3. A a shell as doxel user in the container
+2. A doxel user shell
+3. A root user shell
+
+Then it will open the homepage in your default browser.
 
 with:
 ```
 ./doxel.sh [ --inspect ]
 ```
-* When the container exists already it is attached or restarted, to start with a fresh container, delete it before with eg 
+* When the container exists already, it is attached (if running already) or it is restarted.
+* To start with a fresh container, delete it before with eg 
 ```
-docker rm doxel
+docker rm doxel # !!!! you will lose all your modifications !!!!!
 ```
 
 * When using the --inspect option, the backend is launched directly using node in a single thread, and you can click on the "Open the dedicated DevTool for Node" link displayed on chrome://inspect#devices to inspect or debug the backend code.  (You need a recent Chrome or Chromium version >= 58)
@@ -54,3 +62,4 @@ docker rm doxel
 
 * When the screen session already exists only step 1 is performed
 
+* It's easier, but you should read about Docker and understand how to use docker containers anyway
