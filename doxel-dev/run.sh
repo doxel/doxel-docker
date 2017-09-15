@@ -6,7 +6,6 @@ if [ "$1" = "--inspect" ] ; then
   INSPECT=true
 fi
 
-set +x
 # check for screen session
 if screen -S $NAME -X vbell on > /dev/null ; then
   echo WARNING: reusing existion screen session
@@ -29,7 +28,7 @@ if [ -n "$CONTAINER" ] ; then
   else
     echo Starting a new screen session
     echo Attaching to existing container
-    screen -S $NAME -dm bash -l -c "docker attach $NAME ; exec bash" || exit
+    screen -S $NAME -dm bash -l -c "docker attach $NAME ; exec bash"
   fi
 
 else
@@ -63,14 +62,14 @@ else
 
 fi
 
-
 if [ -z "$SCREEN_EXISTS" ] ; then
+
   # start a root shell
-  screen -S $NAME -x -X screen bash -l -c "docker exec -itu root $NAME /bin/bash ; exec bash"
+  screen -S $NAME -x -X screen bash -l -c "while ! docker ps | grep -q \\ $NAME\$ ; do sleep 3 ; done ; docker exec -itu root $NAME /bin/bash ; exec bash"
   # start a doxel shell
-  screen -S $NAME -x -X screen bash -l -c "docker exec -itu doxel $NAME /bin/bash ; exec bash"
+  screen -S $NAME -x -X screen bash -l -c "while ! docker ps | grep -q \\ $NAME\$ ; do sleep 3 ; done ; docker exec -itu doxel $NAME /bin/bash ; exec bash"
   # open in browser
-  screen -S $NAME -x -X screen bash -l -c "while ! wget --spider http://127.0.0.1:$PORT/app/index.html; do sleep 1 ; done ; xdg-open http://127.0.0.1:$PORT/app/ ; exec bash"
+  screen -S $NAME -x -X screen bash -l -c "while ! wget -q --spider http://127.0.0.1:$PORT/app/index.html; do sleep 1 ; done ; xdg-open http://127.0.0.1:$PORT/app/"
 fi
 
 # attach to screen session
