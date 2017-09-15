@@ -34,24 +34,23 @@ docker exec -itu root doxel /bin/bash
 ```
 ## ALL IN ONE ##
 
-Start (or reattach to) a screen session with (initially) 4 windows:
-1. Launch/attach-to/restart the container
-2. Run a shell as root user in the container
-3. Run a shell as doxel user in the container
-4. Open the browser
+Start (or reattach to) a screen session with:
+1. The container running
+2. A shell as root user in the container
+3. A a shell as doxel user in the container
 
 with:
 ```
-./run.sh [ --inspect ]
+./doxel.sh [ --inspect ]
 ```
 * When the container exists already it is attached or restarted, to start with a fresh container, delete it before with eg 
 ```
 docker rm doxel
 ```
 
-* Without the --inspect option, a backend cluster is run using slc.
-
 * When using the --inspect option, the backend is launched directly using node in a single thread, and you can click on the "Open the dedicated DevTool for Node" link displayed on chrome://inspect#devices to inspect or debug the backend code.  (You need a recent Chrome or Chromium version >= 58)
+
+* Without the --inspect option, a backend cluster is run using slc
 
 * When the screen session already exists only step 1 is performed
 
