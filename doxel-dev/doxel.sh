@@ -33,9 +33,13 @@
 #      Attribution" section of <http://doxel.org/license>.
 #/
 
+set -e
+set -x
+
 PORT=3001
 NAME=doxel
 IMAGE=doxel/dev:latest
+SRCDIR=/home/doxel/doxel-loopback
 
 usage() {
   cat << EOF
@@ -68,7 +72,6 @@ if [[ "$TERM" =~ ^screen ]] ; then
   error Cannot run from inside a screen session
   exit 1
 fi
-
 
 # check for screen session
 if screen -S $NAME -X vbell on > /dev/null ; then
@@ -122,6 +125,7 @@ else
         docker run \
            --name $NAME \
            -it \
+           --mount source=doxel-loopback,destination=$SRCDIR \
            -p 3001:$PORT \
            -p 9229:9229 \
            $IMAGE /root/debug.sh ; \
@@ -134,6 +138,7 @@ else
       screen -S $NAME $OPTIONS bash -l -c "\
         docker run \
           --name $NAME \
+           --mount source=doxel-loopback,destination=$SRCDIR \
           -it \
           -p 3001:$PORT \
           $IMAGE ; \
@@ -149,10 +154,11 @@ if [ -z "$SCREEN_EXISTS" ] ; then
   # start a root shell
   CMD="docker exec -itu root $NAME /bin/bash"
   screen -S $NAME -x -X screen bash -l -c "\
-    echo $CMD
+    echo === waiting for container $NAME
     while [ -z \"\$(docker ps -q --no-trunc --filter name=\^/$NAME$)\" ] ; do
       sleep 3 ; \
     done ; \
+    echo $CMD ; \
     $CMD ;\
     exec bash \
   "
@@ -160,10 +166,11 @@ if [ -z "$SCREEN_EXISTS" ] ; then
   # start a doxel shell
   CMD="docker exec -itu doxel $NAME /bin/bash"
   screen -S $NAME -x -X screen bash -l -c "\
-    echo $CMD
+    echo === waiting for container $NAME
     while [ -z \"\$(docker ps -q --no-trunc --filter name=\^/$NAME$)\" ] ; do
       sleep 3 ; \
     done ; \
+    echo $CMD ; \
     $CMD ; \
     exec bash \
   "
@@ -174,7 +181,8 @@ if [ -z "$SCREEN_EXISTS" ] ; then
     while ! wget -q --spider http://127.0.0.1:$PORT/app/index.html; do \
       sleep 1 ;\
     done ;\
-    xdg-open http://127.0.0.1:$PORT/app/ \
+    xdg-open http://127.0.0.1:$PORT/app/ ;\
+    exec bash \
   "
 
 fi
