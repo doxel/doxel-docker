@@ -21,7 +21,6 @@ docker build \
   --build-arg debian_mirror=$DEBIAN_MIRROR \
   --build-arg nvm_version=$NVM_VERSION \
   --build-arg node_version=$NODE_VERSION \
-  -t doxel/dev:$(date +%s) \
-  -t doxel/dev:latest \
-  ./
+  -t doxel-dev \
+  .
 
