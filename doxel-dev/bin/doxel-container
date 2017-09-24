@@ -84,12 +84,12 @@ esac
 
 PORT=3001
 NAME=doxel
-IMAGE=doxel/dev:latest
+IMAGE=doxel-dev:latest
 SRCDIR=/home/doxel/doxel-loopback
 
 while [ $# -gt 0 ] ; do
   case "$1" in
-    --inspect) INSPECT=true shift ;;
+    --inspect|-i) INSPECT=true ; shift ;;
     --help|-h) usage ;;
     *) usage
   esac
@@ -125,21 +125,25 @@ else
   else
     if [ -n "$INSPECT" ] ; then
       progress Starting a new container with inspector enabled
+      # port 35729 is for livereload
       docker run \
        --name $NAME \
        -it \
        --mount source=doxel-loopback,destination=$SRCDIR \
        -p 3001:$PORT \
        -p 9229:9229 \
+       -p 35729:35729 \
        $IMAGE /root/debug.sh
 
     else
       progress Starting a new container
+      # port 35729 is for livereload
       docker run \
         --name $NAME \
          --mount source=doxel-loopback,destination=$SRCDIR \
-        -t \
+        -it \
         -p 3001:$PORT \
+        -p 35729:35729 \
         $IMAGE
     fi
   fi
