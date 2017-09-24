@@ -48,15 +48,51 @@ case "$1" in
   -h|--help) usage ;;
 esac
 
+NAME=doxel-atom
+
+container() {
+  docker ps $1 -q --no-trunc --filter name=^/$NAME$
+}
+
+#if [ -z "$(container)" ] ; then
+#  STOPPED_CONTAINER="$(container -a)"
+#  if [ -n "$STOPPED_CONTAINER" ] ; then
+#    echo == Resume existing container
+#    docker commit $STOPPED_CONTAINER atom:resume
+#    docker rm $STOPPED_CONTAINER
+#    docker run \
+#      -it \
+#      --name $NAME \
+#      -v /tmp/.X11-unix/:/tmp/.X11-unix/ \
+#      -v /dev/shm:/dev/shm \
+#      -e DISPLAY \
+#      --mount source=doxel-atom,destination=/home/atom \
+#      --mount source=doxel-loopback,destination=/home/atom/src/doxel-loopback \
+#      atom:resume \
+#      bash -c -l "killall -0 atom || usr/bin/atom ; bash -l"
+#    exit
+#  fi
+#fi
+
+# when the doxel-atom volume exists, preferences will tell what to open
+VOLUME=$(docker volume ls -q --filter name=^$NAME$)
+if [ -n "$VOLUME" ] ; then
+  CMD="/usr/bin/atom -f"
+else
+  # but the first time atom is launched, force open the project directory
+  CMD="/usr/bin/atom -f /home/atom/src/doxel-loopback"
+fi
+
 echo === Running atom
 docker run \
-  -it \
-  --name doxel-atom \
+  --rm=true \
+  -d \
+  --name $NAME \
   -v /tmp/.X11-unix/:/tmp/.X11-unix/ \
   -v /dev/shm:/dev/shm \
-  -v ${HOME}/.atom:/home/atom/.atom \
   -e DISPLAY \
-  --mount source=doxel-loopback,destination=/home/atom/doxel-loopback \
+  --mount source=doxel-atom,destination=/home/atom \
+  --mount source=doxel-loopback,destination=/home/atom/src/doxel-loopback \
   atom \
-  bash -c -l "/usr/bin/atom /home/atom/doxel-loopback ; exec bash"
+  $CMD
 
