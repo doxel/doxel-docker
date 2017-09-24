@@ -7,20 +7,73 @@ Docker container to develop and test [doxel.org](https://www.doxel.org) [backend
 For example with:
 
 ```
+./build.sh
+```
+
+or
+
+```
 DEBIAN_MIRROR=ftp.ch.debian.org NVM_VERSION=v0.33.0 NODE_VERSION=v6.9.4 build.sh 
 ```
 
 ## RUN THE CONTAINER ##
 
-For example with:
+Use ```bin/doxel-container```:
 ```
-docker run --name doxel -itp 3001:3001 doxel/dev:latest
+NAME
+      doxel-container
+
+SYNOPSIS
+      doxel-container [-h|--help] [-i|--inspect]
+
+DESCRIPTION
+      Start, attach to, or restart the doxel docker container.
+
+      When the container does not exists it is started (the --inspect option
+      is not effective in other cases below)
+      When the container is running already it is attached.
+      When the container exists already it is restarted.
+
+      To start with a fresh container, delete it before with eg:
+            `docker rm doxel`
+
+      When the local docker volume \'doxel-loopback\' does not exists (eg: the
+      first time the container is started with this script), it is created and
+      populated with the content of the project directory located in
+      '/home/doxel/doxel-loopback', then mounted over it.
+
+      To start with a fresh volume, AND DISCARD ALL YOUR MODIFICATIONS TO THE
+      SOURCE CODE, delete the volume with eg:
+            `docker volume rm doxel-loopback`
+
+
+      This is the same volume that the 'doxel-atom' container will use.
+
+      When using the --inspect option, the backend is launched directly using
+      nodejs, in a single thread (with node inspector enabled).
+      Then you can click on the "Open the dedicated DevTool for Node" link
+      displayed on chrome://inspect#devices to inspect or debug the backend
+      code. (You need a recent Chrome or Chromium version >= 58)
+
+      -i|--inspect
+               Run a single nodejs thread and start the chrome inspector.
+               With this option, a backend cluster is run using slc.
+               Specifying/omitting this option when the container is already
+               running has no effect.
+
 ```
-This will start a server cluster using slc.
 
 ## CONNECT WITH YOUR BROWSER ##
 
 For example with:
+
+
+```
+./bin/doxel-browser
+```
+
+or 
+
 ```
 xdg-open http://127.0.0.1:3001/app/
 ```
@@ -30,46 +83,44 @@ xdg-open http://127.0.0.1:3001/app/
 For example with:
 
 ```
+./bin/doxel-shell -u doxel
+```
+
+or
+
+```
 docker exec -itu root doxel /bin/bash
 ```
-## EASIER SHOULD BE BETTER ##
 
-Instead of all the above, just use `./doxel.sh`
+## EDIT THE SOURCE CODE ##
 
+After running the container and opening the homepage with your browser, you may want test some changes or debug something.
+
+You need to build the doxel-atom docker container beforehand.
+Then you can open the project in atom using:
 ```
-./doxel.sh [ --inspect ]
-```
-
-* This method is incompatible with Docker version 17.06.2-ce as mentionned in issue#1
-  Upgrade or downgrade to docker version 17.05.0-ce if needed.
-
-doxel.sh will start (or reattach to) a gnu screen session with:
-1. The container running
-2. A doxel user shell
-3. A root user shell
-
-Then it will open the homepage in your default browser.
-
-* When the container exists already, it is attached (if running already) or it is restarted.
-* To start with a fresh container, delete it before with eg:
-```
-docker rm doxel # !!!! you will lose all your modifications !!!!!
+./bin/doxel-atom
 ```
 
-* When using the --inspect option, the backend is launched directly using node in a single thread (with node inspector enabled), and you can click on the "Open the dedicated DevTool for Node" link displayed on chrome://inspect#devices to inspect or debug the backend code.  (You need a recent Chrome or Chromium version >= 58)
+It will allow you to edit (with the doxel-atom docker container), the content of the doxel-loopback docker volume (used by the doxel container)
 
-* Without the --inspect option, a backend cluster is run using slc
+You may also want to run 'grunt watch' in the doxel-loopback/client directory of the doxel-container, to rebuild index.html, css files and other stuff automatically as configured in the Gruntfile.js
 
-* When the screen session already exists only step 1 is performed
+You can do this with: 
+```
+./bin/doxel-watch
+```
+To work with the un-minimized scripts and css/html files, you must set cookie debug=true in your browser.
 
-* It's easier, but you should read about Docker and understand how to use docker containers anyway
+You can rebuild the minimized scripts and css/html with 'grunt build' or
+```
+./bin/doxel-build
+```
 
+After modifying the API (common/models), you must rebuild the angular services with ``lb-ng server/server.js client/app/lb-services.js``` in the container doxel-loopback directory or with:
+```
+./bin/doxel-lbng
+```
 
-Inside the screen session you can use eg:
-* `<ctrl>-<a> <0>` to display the server log
-* `<ctrl>-<a> <1>` for the doxel user shell
-* `<ctrl>-<a> <2>` for the root shell
-* `<ctrl>-<a> <d>` to detach the screen session.(use screen -rd doxel to reattach)
-
-See the "gnu screen" documentation for more details.
+Then you must restart the server, eg with ```slc ctl restart doxel-loopback```
 
