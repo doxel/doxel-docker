@@ -1,0 +1,74 @@
+#!/bin/bash
+#
+# doxel-watch.sh - run grunt watch in the doxel-loopback/client directory
+#
+# Author(s):
+#
+#      Luc Deschenaux <luc.deschenaux@freesurf.ch>
+#
+# This file is part of the DOXEL project <http://doxel.org>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Additional Terms:
+#
+#      You are required to preserve legal notices and author attributions in
+#      that material or in the Appropriate Legal Notices displayed by works
+#      containing it.
+#
+#      You are required to attribute the work as explained in the "Usage and
+#      Attribution" section of <http://doxel.org/license>.
+#/
+
+usage() {
+  cat << EOF
+SYNOPSIS
+      $(basename $0)
+
+DESCRIPTION
+      Run \'grunt watch\' in the doxel-loopback/client directory
+      of the running doxel container.
+      
+EOF
+  exit 1
+}
+
+case "$1" in 
+  -h|--help) usage ;;
+esac
+
+PORT=3001
+NAME=doxel
+
+progress() {
+  echo "=== $@" >&2
+}
+
+error() {
+  echo "*** $@" >&2
+}
+
+container() {
+  docker ps $1 -q --no-trunc --filter name=^/$NAME$
+}
+
+# check for running container
+
+if [ ! -n "$(container)" ] ; then
+  error container is not running
+  exit
+fi
+
+progress Rebuild doxel-angular
+docker exec -it -u doxel $NAME /bin/bash -l -c "cd doxel-loopback/client ; grunt --force build ; bash"

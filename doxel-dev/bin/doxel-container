@@ -1,0 +1,146 @@
+#!/bin/bash
+#
+# doxel-container.sh - Start, attach to, or restart the doxel container
+#
+# Author(s):
+#
+#      Luc Deschenaux <luc.deschenaux@freesurf.ch>
+#
+# This file is part of the DOXEL project <http://doxel.org>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Additional Terms:
+#
+#      You are required to preserve legal notices and author attributions in
+#      that material or in the Appropriate Legal Notices displayed by works
+#      containing it.
+#
+#      You are required to attribute the work as explained in the "Usage and
+#      Attribution" section of <http://doxel.org/license>.
+#/
+
+usage() {
+  cat << EOF
+NAME
+      $(basename $0)
+
+SYNOPSIS
+      $(basename $0) [-h|--help] [-i|--inspect]
+
+DESCRIPTION
+      Start, attach to, or restart the doxel docker container.
+
+      When the container does not exists it is started (the --inspect option
+      is not effective in other cases below)
+      When the container is running already it is attached.
+      When the container exists already it is restarted.
+
+      To start with a fresh container, delete it before with eg:
+            \`docker rm doxel\`
+
+      When the local docker volume \'doxel-loopback\' does not exists (eg: the
+      first time the container is started with this script), it is created and
+      populated with the content of the project directory located in
+      '/home/doxel/doxel-loopback', then mounted over it.
+
+      To start with a fresh volume, AND DISCARD ALL YOUR MODIFICATIONS TO THE
+      SOURCE CODE, delete the volume with eg:
+            \`docker volume rm doxel-loopback\`
+
+
+      This is the same volume that the 'doxel-atom' container will use.
+
+      When using the --inspect option, the backend is launched directly using
+      nodejs, in a single thread (with node inspector enabled).
+      Then you can click on the "Open the dedicated DevTool for Node" link
+      displayed on chrome://inspect#devices to inspect or debug the backend
+      code. (You need a recent Chrome or Chromium version >= 58)
+
+      -i|--inspect
+               Run a single nodejs thread and start the chrome inspector.
+               With this option, a backend cluster is run using slc.
+               Specifying/omitting this option when the container is already
+               running has no effect.
+
+EOF
+  exit 1
+}
+
+case "$1" in 
+  -h|--help) usage ;;
+esac
+
+PORT=3001
+NAME=doxel
+IMAGE=doxel/dev:latest
+SRCDIR=/home/doxel/doxel-loopback
+
+while [ $# -gt 0 ] ; do
+  case "$1" in
+    --inspect) INSPECT=true shift ;;
+    --help|-h) usage ;;
+    *) usage
+  esac
+done
+
+progress() {
+  echo "=== $@" >&2
+}
+
+error() {
+  echo "*** $@" >&2
+}
+
+container() {
+  docker ps $1 -q --no-trunc --filter name=^/$NAME$
+}
+
+# check for running container
+
+if [ -n "$(container)" ] ; then
+  progress WARNING: container is already running
+  progress Attaching to existing container
+  docker attach $NAME
+  exit
+
+else
+
+  if [ -n "$(container -a)" ] ; then
+    progress Restarting existing container
+    docker start -ai $NAME 
+    exit
+  
+  else
+    if [ -n "$INSPECT" ] ; then
+      progress Starting a new container with inspector enabled
+      docker run \
+       --name $NAME \
+       -it \
+       --mount source=doxel-loopback,destination=$SRCDIR \
+       -p 3001:$PORT \
+       -p 9229:9229 \
+       $IMAGE /root/debug.sh
+
+    else
+      progress Starting a new container
+      docker run \
+        --name $NAME \
+         --mount source=doxel-loopback,destination=$SRCDIR \
+        -t \
+        -p 3001:$PORT \
+        $IMAGE
+    fi
+  fi
+fi
