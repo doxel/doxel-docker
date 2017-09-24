@@ -7,13 +7,13 @@ Docker container to develop and test [doxel.org](https://www.doxel.org) [backend
 For example with:
 
 ```
-./build.sh
+make
 ```
 
 or
 
 ```
-DEBIAN_MIRROR=ftp.ch.debian.org NVM_VERSION=v0.33.0 NODE_VERSION=v6.9.4 build.sh 
+DEBIAN_MIRROR=ftp.ch.debian.org NVM_VERSION=v0.33.0 NODE_VERSION=v6.9.4 make
 ```
 
 ## RUN THE CONTAINER ##
@@ -29,35 +29,34 @@ SYNOPSIS
 DESCRIPTION
       Start, attach to, or restart the doxel docker container.
 
-      When the container does not exists it is started (the --inspect option
+      * When the container does not exists it is started (the --inspect option
       is not effective in other cases below)
-      When the container is running already it is attached.
-      When the container exists already it is restarted.
+      * When the container is running already it is attached.
+      * When the container exists already it is restarted.
 
       To start with a fresh container, delete it before with eg:
             `docker rm doxel`
 
-      When the local docker volume \'doxel-loopback\' does not exists (eg: the
-      first time the container is started with this script), it is created and
-      populated with the content of the project directory located in
-      '/home/doxel/doxel-loopback', then mounted over it.
+      The first time the container is started with this script, a docker
+      volume named 'doxel-loopback' is created and populated with the
+      content of the project directory located in '/home/doxel/doxel-loopback'
+      then mounted over it.
 
       To start with a fresh volume, AND DISCARD ALL YOUR MODIFICATIONS TO THE
-      SOURCE CODE, delete the volume with eg:
+      SOURCE CODE, delete the volume with:
             `docker volume rm doxel-loopback`
 
-
-      This is the same volume that the 'doxel-atom' container will use.
-
-      When using the --inspect option, the backend is launched directly using
-      nodejs, in a single thread (with node inspector enabled).
-      Then you can click on the "Open the dedicated DevTool for Node" link
-      displayed on chrome://inspect#devices to inspect or debug the backend
-      code. (You need a recent Chrome or Chromium version >= 58)
+      This is the same volume that the 'doxel-atom' container will use for 
+      editing purposes.
 
       -i|--inspect
                Run a single nodejs thread and start the chrome inspector.
-               With this option, a backend cluster is run using slc.
+
+               Then you can click on the "Open the dedicated DevTool for Node"
+               link displayed on chrome://inspect#devices to debug the backend
+               (You need a recent Chrome or Chromium version >= 58)
+
+               Without this option, a backend cluster is run using slc.
                Specifying/omitting this option when the container is already
                running has no effect.
 
@@ -94,8 +93,6 @@ docker exec -itu root doxel /bin/bash
 
 ## EDIT THE SOURCE CODE ##
 
-After running the container and opening the homepage with your browser, you may want test some changes or debug something.
-
 You need to build the doxel-atom docker container beforehand.
 Then you can open the project in atom using:
 ```
@@ -104,7 +101,7 @@ Then you can open the project in atom using:
 
 It will allow you to edit (with the doxel-atom docker container), the content of the doxel-loopback docker volume (used by the doxel container)
 
-You may also want to run 'grunt watch' in the doxel-loopback/client directory of the doxel-container, to rebuild index.html, css files and other stuff automatically as configured in the Gruntfile.js
+You may also want to run 'grunt watch' in the doxel-loopback/client directory of the doxel-container, to rebuild index.html, css files and other stuff automatically and enable livereload as configured in the Gruntfile.js
 
 You can do this with: 
 ```
@@ -122,5 +119,6 @@ After modifying the API (common/models), you must rebuild the angular services w
 ./bin/doxel-lbng
 ```
 
-Then you must restart the server, eg with ```slc ctl restart doxel-loopback```
+Then you must restart the server, eg with ```slc ctl restart doxel-loopback``` or by removing and restarting the container.
+
 
