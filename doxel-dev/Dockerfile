@@ -22,7 +22,7 @@ RUN sed -r -i -e s/deb.debian.org/$debian_mirror/ /etc/apt/sources.list \
  && gem install \
       compass \
       sass \
- && useradd --create-home --system --shell /bin/bash $user
+ && useradd --create-home --shell /bin/bash $user
 USER $user
 WORKDIR /home/$user
 ARG nvm_version=v0.33.2
