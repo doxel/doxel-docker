@@ -46,7 +46,7 @@ DESCRIPTION
       SOURCE CODE, delete the volume with:
             `docker volume rm doxel-loopback`
 
-      This is the same volume that the 'doxel-atom' container will use for 
+      This is the same volume that the 'doxel-atom' container will use for
       editing purposes.
 
       -i|--inspect
@@ -71,7 +71,7 @@ For example with:
 ./bin/doxel-browser
 ```
 
-or 
+or
 
 ```
 xdg-open http://127.0.0.1:3001/app/
@@ -93,17 +93,18 @@ docker exec -itu root doxel /bin/bash
 
 ## EDIT THE SOURCE CODE ##
 
-You need to build the doxel-atom docker container beforehand.
+When applicable, you can either edit files directly in '/var/lib/docker/volumes/doxel-loopback/_data' or using 'bindfs' to map the file owner.
+Else you have to use the 'docker-atom' script (or take a leaf out of it to build a docker container for your favourite IDE that will mount the doxel-loopback docker volume).
+
+To use the doxel-atom script you need to build the [docker-atom](https://github.com/doxel/docker-atom-editor) docker container beforehand.
 Then you can open the project in atom using:
 ```
 ./bin/doxel-atom
 ```
 
-It will allow you to edit (with the doxel-atom docker container), the content of the doxel-loopback docker volume (used by the doxel container)
-
 You may also want to run 'grunt watch' in the doxel-loopback/client directory of the doxel-container, to rebuild index.html, css files and other stuff automatically and enable livereload as configured in the Gruntfile.js
 
-You can do this with: 
+You can do this with:
 ```
 ./bin/doxel-watch
 ```
@@ -119,6 +120,4 @@ After modifying the API (common/models), you must rebuild the angular services w
 ./bin/doxel-lbng
 ```
 
-Then you must restart the server, eg with ```slc ctl restart doxel-loopback``` or by removing and restarting the container.
-
-
+Then you must restart the server, eg with ```slc ctl restart doxel-loopback``` or by removing and restarting the doxel container.
