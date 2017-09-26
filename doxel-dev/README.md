@@ -46,7 +46,7 @@ DESCRIPTION
       SOURCE CODE, delete the volume with:
             `docker volume rm doxel-loopback`
 
-      This is the same volume that the 'doxel-atom' container will use for
+      This is the same volume that the 'doxel-atom' script will use for
       editing purposes.
 
       -i|--inspect
