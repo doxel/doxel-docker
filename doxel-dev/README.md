@@ -42,12 +42,15 @@ DESCRIPTION
       content of the project directory located in '/home/doxel/doxel-loopback'
       then mounted over it.
 
-      To start with a fresh volume, AND DISCARD ALL YOUR MODIFICATIONS TO THE
-      SOURCE CODE, delete the volume with:
-            `docker volume rm doxel-loopback`
+      This volume is exposed on the host filesystem at:
+       `/var/lib/docker/volumes/doxel-loopback/_data`
 
       This is the same volume that the 'doxel-atom' script will use for
       editing purposes.
+
+      To start with a fresh volume, AND DISCARD ALL YOUR MODIFICATIONS TO THE
+      SOURCE CODE, delete the volume with:
+            `docker volume rm doxel-loopback`
 
       -i|--inspect
                Run a single nodejs thread and start the chrome inspector.
@@ -94,7 +97,7 @@ docker exec -itu root doxel /bin/bash
 ## EDIT THE SOURCE CODE ##
 
 When applicable, you can either edit files directly in '/var/lib/docker/volumes/doxel-loopback/_data' or using 'bindfs' to map the file owner.
-Else you have to use the 'docker-atom' script (or take a leaf out of it to build a docker container for your favourite IDE that will mount the doxel-loopback docker volume).
+Or you have to use the 'docker-atom' script (or take a leaf out of it to build a docker container for your favourite IDE that will mount the doxel-loopback docker volume).
 
 To use the doxel-atom script you need to build the [docker-atom](https://github.com/doxel/docker-atom-editor) docker container beforehand.
 Then you can open the project in atom using:

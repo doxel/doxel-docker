@@ -42,35 +42,37 @@ SYNOPSIS
 DESCRIPTION
       Start, attach to, or restart the doxel docker container.
 
-      When the container does not exists it is started (the --inspect option
+      * When the container does not exists it is started (the --inspect option
       is not effective in other cases below)
-      When the container is running already it is attached.
-      When the container exists already it is restarted.
+      * When the container is running already it is attached.
+      * When the container exists already it is restarted.
 
       To start with a fresh container, delete it before with eg:
-            \`docker rm doxel\`
+            `docker rm doxel`
 
-      When the local docker volume \'doxel-loopback\' does not exists (eg: the
-      first time the container is started with this script), it is created and
-      populated with the content of the project directory located in
-      '/home/doxel/doxel-loopback', then mounted over it.
+      The first time the container is started with this script, a docker
+      volume named 'doxel-loopback' is created and populated with the
+      content of the project directory (located in '/home/doxel/doxel-loopback')
+      then mounted over it.
+
+      This volume is exposed on the host filesystem at:
+       `/var/lib/docker/volumes/doxel-loopback/_data`
+
+      This is the same volume that the 'doxel-atom' script will use for
+      editing purposes.
 
       To start with a fresh volume, AND DISCARD ALL YOUR MODIFICATIONS TO THE
-      SOURCE CODE, delete the volume with eg:
-            \`docker volume rm doxel-loopback\`
-
-
-      This is the same volume that the 'doxel-atom' container will use.
-
-      When using the --inspect option, the backend is launched directly using
-      nodejs, in a single thread (with node inspector enabled).
-      Then you can click on the "Open the dedicated DevTool for Node" link
-      displayed on chrome://inspect#devices to inspect or debug the backend
-      code. (You need a recent Chrome or Chromium version >= 58)
+      SOURCE CODE, delete the volume with:
+            `docker volume rm doxel-loopback`
 
       -i|--inspect
                Run a single nodejs thread and start the chrome inspector.
-               With this option, a backend cluster is run using slc.
+
+               Then you can click on the "Open the dedicated DevTool for Node"
+               link displayed on chrome://inspect#devices to debug the backend
+               (You need a recent Chrome or Chromium version >= 58)
+
+               Without this option, a backend cluster is run using slc.
                Specifying/omitting this option when the container is already
                running has no effect.
 
@@ -78,7 +80,7 @@ EOF
   exit 1
 }
 
-case "$1" in 
+case "$1" in
   -h|--help) usage ;;
 esac
 
@@ -119,9 +121,9 @@ else
 
   if [ -n "$(container -a)" ] ; then
     progress Restarting existing container
-    docker start -ai $NAME 
+    docker start -ai $NAME
     exit
-  
+
   else
     if [ -n "$INSPECT" ] ; then
       progress Starting a new container with inspector enabled
