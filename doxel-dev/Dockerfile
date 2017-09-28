@@ -72,7 +72,8 @@ RUN chmod +x /root/debug.sh \
  && chmod +x /tmp/postinstall.sh \
  && sync \
  && service mongodb start \
- && /tmp/postinstall.sh
+ && /tmp/postinstall.sh \
+ && chown doxel:doxel /home/doxel -R
 CMD service mongodb start \
  && su - doxel bash -l -c " \
          slc start doxel-loopback \
