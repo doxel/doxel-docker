@@ -94,6 +94,16 @@ or
 docker exec -itu root doxel /bin/bash
 ```
 
+## ALL IN ONE ##
+For example with gnu-screen:
+```
+screen -S doxel -dm doxel-container -i
+screen -S doxel -dmx -X screen doxel-watch
+screen -S doxel -dmx -X screen doxel-shell -u doxel
+screen -S doxel -dmx -X screen doxel-browser
+screen -S doxel -rdp0
+```
+
 ## EDIT THE SOURCE CODE ##
 
 When applicable, you can either edit files directly in '/var/lib/docker/volumes/doxel-loopback/_data' or using 'bindfs' to map the file owner.
