@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 SENSOR_WIDTH_DB=${SENSOR_WIDTH_DB:-/usr/share/openMVG/sensor_width_camera_database.txt}
 NUM_THREADS=${NUM_THREADS:-$(nproc)}
 
@@ -17,54 +19,51 @@ progress() {
 }
 
 # login
-ACCESS_TOKEN=$(loopback-login -u $USERNAME -p $PASSWORD --no-check-certificate $URL/users/login)
+ACCESS_TOKEN=$(loopback-login -u $USERNAME -p $PASSWORD --no-check-certificate $URL)
 [ -z "$ACCESS_TOKEN" ] && errmsg login failed
 
-AUTHORIZATION=$(jq .id <<< $ACCESS_TOKEN)
+AUTHORIZATION=$(jq -r .id <<< $ACCESS_TOKEN)
 [ -z "$AUTHORIZATION" ] && errmsg no authorization
 
-USER_ID=$(jq.userId <<< $ACCESS_TOKEN)
+USER_ID=$(jq -r .userId <<< $ACCESS_TOKEN)
 [ -z "$USER_ID" ] && errmsg no user id
 
 # get job info
-RESULT=$(doxel-getajob -a $AUTHORIZATION $URL/jobs/get)
+RESULT=$(doxel-getjob -a $AUTHORIZATION $URL)
 [ -z "$RESULT" ] && errmsg no job
 
-JOB_ID=$(jq .result.job.id <<< $RESULT)
+JOB_ID=$(jq -r .result.job.id <<< $RESULT)
 [ -z "$JOB_ID" ] && errmsg no job id
 
-SEGMENT_ID=$(jq .result.job.segmentId <<< $RESULT)
+SEGMENT_ID=$(jq -r .result.job.segmentId <<< $RESULT)
 [ -z "$SEGMENT_ID" ] && errmsg no segment id
 
-SEGMENT_DIR=$(segment-path $SEGMENT_ID)
+echo $AUTHORIZATION
+SEGMENT_DIR=$(doxel-segment-path -s $SEGMENT_ID -a $AUTHORIZATION $URL | sed -r -e 's/.*\/upload/\/mnt\/upload/')
 [ -z "$SEGMENT_DIR" ] && errmsg no segment dir
 
 
-process_segment() {
-  set -x
-   SEGMENT_DIR=$1
-	 cd $SEGMENT_DIR || error "no such directory: $SEGMENT_DIR"
-
-   if [ -f ./openMVG/sfm_data.json ]
-   then
-     progress "Images list already exist"
-   else
-     progress "Images listing"
+sfm_init() {
+  if [ -f $SEGMENT_DIR/openMVG/sfm_data.json ]
+  then
+    progress "Images list already exist"
+  else
+    progress "Images listing"
 #     if exiftool $(find original_images/ -name \*.jpeg -print -quit) | grep model -i | grep -qi EYESIS
 #     then
-       SFMINIT_IMAGELISTING_OPTIONS=${SFMINIT_IMAGELISTING_OPTIONS:-\
-       }
-       openMVG_main_SfMInit_ImageListing \
-         -i ./original_images \
-         -o ./openMVG \
-         -d $SENSOR_WIDTH_DB \
-         $SFMINIT_IMAGELISTING_OPTIONS
+      SFMINIT_IMAGELISTING_OPTIONS=${SFMINIT_IMAGELISTING_OPTIONS:-\
+      }
+      openMVG_main_SfMInit_ImageListing \
+        -i $SEGMENT_DIR/original_images \
+        -o $SEGMENT_DIR/openMVG \
+        -d $SENSOR_WIDTH_DB \
+        $SFMINIT_IMAGELISTING_OPTIONS
 
-			 EXIT_CODE=$?
-			 if [ $EXIT_CODE -ne 0 ] ; then
-				 [ -f ./openMVG/sfm_data.json ] && rm ./openMVG/sfm_data.json
-				 errmsg "openMVG_main_SfMInit_ImageListing exited with status $EXIT_CODE"
-			 fi
+      EXIT_CODE=$?
+      if [ $EXIT_CODE -ne 0 ] ; then
+        [ -f $SEGMENT_DIR/openMVG/sfm_data.json ] && rm $SEGMENT_DIR/openMVG/sfm_data.json
+        errmsg "openMVG_main_SfMInit_ImageListing exited with status $EXIT_CODE"
+      fi
 
 #     else
 #         openMVG_main_SfMInit_ImageListing \
@@ -72,145 +71,170 @@ process_segment() {
 #          -d $SENSOR_WIDTH_DB \
 #          -o ./openMVG
 #     fi
-   fi
+  fi
+}
 
-   if [ -n "$(find ./openMVG/matches/ -maxdepth 1 -iname \*.feat -print -quit)" ]
-   then
-     progress Features already exist
-   else
-     progress Feature detect
-     COMPUTEFEATURES_OPTIONS=${COMPUTEFEATURES_OPTIONS:-\
-       -m SIFT \
-       -p HIGH \
-     }
-     openMVG_main_ComputeFeatures $COMPUTEFEATURES_OPTIONS
-       -o ./openMVG/matches/ \
-       -i ./openMVG/sfm_data.json \
-       -n $NUM_THREADS \
-       $COMPUTEFEATURES_OPTIONS
+compute_features() {
+  if [ -n "$(find $SEGMENT_DIR/openMVG/matches/ -maxdepth 1 -iname \*.feat -print -quit)" ]
+  then
+    progress Features already exist
+  else
+    progress Feature detect
+    COMPUTEFEATURES_OPTIONS=${COMPUTEFEATURES_OPTIONS:-\
+      -m SIFT \
+    }
+    openMVG_main_ComputeFeatures \
+      -o $SEGMENT_DIR/openMVG/matches/ \
+      -i $SEGMENT_DIR/openMVG/sfm_data.json \
+      -n $NUM_THREADS \
+      $COMPUTEFEATURES_OPTIONS
 
-		 EXIT_CODE=$?
-		 if [ $EXIT_CODE -ne 0 ] ; then
-   		 find ./openMVG/matches/ -maxdepth 1 -iname \*.feat -or -iname \*.desc -exec rm '{}' \;
-			 errmsg openMVG_main_ComputeFeatures exited with status $EXIT_CODE
-		 fi
-
-   fi
-
-   if [ -n "$(find ./openMVG/matches/ -maxdepth 1 -name matches.putative.\* -print -quit)" ]
-   then
-     progress Matches already done
-   else
-     progress Matching
-     $COMPUTEMATCHES_OPTIONS=${COMPUTEMATCHES_OPTIONS:-\
-       -v 5 \
-     }
-     openMVG_main_ComputeMatches \
-       -i ./openMVG/sfm_data.json \
-       -o ./openMVG/matches \
-       -g e \
-       $COMPUTEMATCHES_OPTIONS
-
-		 EXIT_CODE=$?
-		 if [ $EXIT_CODE -ne 0 ] ; then
-   		 find ./openMVG/matches/ -maxdepth 1 -iname matches.putative.\* -exec rm '{}' \;
-			 errmsg "openMVG_main_ComputeMatches exited with status $EXIT_CODE"
-		 fi
-   fi
-
-   if [ -f ./openMVG/SfMReconstruction_Report.html ]
-   then
-     progress "GlobalSfM already done"
-   else
-     progress "Running GlobalSfM"
-     GLOBALSFM_OPTIONS=${GLOBALSFM_OPTIONS:-\
-     }
-     openMVG_main_GlobalSfM \
-       -i ./openMVG/sfm_data.json \
-       -m ./openMVG/matches \
-       -o ./openMVG \
-       $GLOBALSFM_OPTIONS
-
-		 EXIT_CODE=$?
-		 if [ $EXIT_CODE -ne 0 ] ; then
-   		 find ./openMVG/SfMReconstruction_Report.html -maxdepth 1 -exec rm '{}' \;
-			 errmsg "openMVG_main_GlobalSfM exited with status $EXIT_CODE"
-		 fi
-   fi
-
-   if [ -f ./openMVG/robust.ply ]
-   then
-     progress "Compute Structure From Known Poses already done"
-   else
-     progress "Compute Structure From Known Poses"
-     COMPUTESTRUCTUREFROMKNOWNPOSES_OPTIONS=${COMPUTESTRUCTUREFROMKNOWNPOSES_OPTIONS:-\
-     }
-     openMVG_main_ComputeStructureFromKnownPoses \
-			 -i ./openMVG/sfm_data.bin \
-       -m ./openMVG/matches \
-       -o ./openMVG/robust.json \
-       $COMPUTESTRUCTUREFROMKNOWNPOSES_OPTIONS
-
-		 EXIT_CODE=$?
-		 if [ $EXIT_CODE -ne 0 ] ; then
-   		 [ -f ./openMVG/robust.ply ] && rm ./openMVG/robust.ply
-			 errmsg "openMVG_main_ComputeStructureFromKnownPoses exited with status $EXIT_CODE"
-		 fi
-
-   fi
-
-   if [ -n "$(find ./PMVS/ -maxdepth 1 -name pmvs_options.txt -print -quit)" ]
-   then
-     progress "PMVS directory already exist"
-   else
-     progress "Exporting to PMVS"
-     OPENMVG2PMVS_OPTIONS=${OPENMVG2PMVS_OPTIONS:-\
-     }
-     openMVG_main_openMVG2PMVS \
-       -i ./openMVG/robust.json \
-       -o . \
-       $OPENMVG2PMVS_OPTIONS
-
-		 EXIT_CODE=$?
-		 if [ $EXIT_CODE -ne 0 ] ; then
-   		 [ -d ./PMVS ] && rm -r ./PMVS
-			 errmsg "openMVG_main_openMVG2PMVS exited with status $EXIT_CODE"
-		 fi
-
-   fi
-
-   if [ -n "$(find ./PMVS/models/ -type f -print -quit)" ]
-   then
-     progress "PMVS models directory already exist"
-   else
-    progress "running CMVS/PMVS"
-    cmvs PMVS/ 80 $NUM_THREADS \
-    && genOption PMVS/ \
-    && sed -i "s/ pmvs/ PMVS/g" PMVS/pmvs.sh \
-    && bash PMVS/pmvs.sh
-
-		EXIT_CODE=$?
-		if [ $EXIT_CODE -ne 0 ] ; then
-   	  [ -d ./PMVS/models ] && rm -r ./PMVS/models
-		  errmsg "CMVS/PMVS exited with status $EXIT_CODE"
-		fi
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -ne 0 ] ; then
+       find $SEGMENT_DIR/openMVG/matches/ -maxdepth 1 -iname \*.feat -or -iname \*.desc -exec rm '{}' \;
+      errmsg openMVG_main_ComputeFeatures exited with status $EXIT_CODE
+    fi
 
   fi
+}
 
-  if [ -d ./potree ]
+compute_matches() {
+  if [ -n "$(find $SEGMENT_DIR/openMVG/matches/ -maxdepth 1 -name matches.putative.\* -print -quit)" ]
+  then
+    progress Matches already done
+  else
+    progress Matching
+    COMPUTEMATCHES_OPTIONS=${COMPUTEMATCHES_OPTIONS:-\
+      -g e \
+    }
+    openMVG_main_ComputeMatches \
+      -i $SEGMENT_DIR/openMVG/sfm_data.json \
+      -o $SEGMENT_DIR/openMVG/matches \
+      $COMPUTEMATCHES_OPTIONS
+
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -ne 0 ] ; then
+      find $SEGMENT_DIR/openMVG/matches/ -maxdepth 1 -iname matches.putative.\* -exec rm '{}' \;
+      errmsg "openMVG_main_ComputeMatches exited with status $EXIT_CODE"
+    fi
+  fi
+}
+
+global_sfm() {
+  if [ -f $SEGMENT_DIR/openMVG/SfMReconstruction_Report.html ]
+  then
+    progress "GlobalSfM already done"
+  else
+    progress "Running GlobalSfM"
+    GLOBALSFM_OPTIONS=${GLOBALSFM_OPTIONS:-\
+    }
+    openMVG_main_GlobalSfM \
+      -i $SEGMENT_DIR/openMVG/sfm_data.json \
+      -m $SEGMENT_DIR/openMVG/matches \
+      -o $SEGMENT_DIR/openMVG/ \
+      $GLOBALSFM_OPTIONS
+
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -ne 0 ] ; then
+       find $SEGMENT_DIR/openMVG/SfMReconstruction_Report.html -maxdepth 1 -exec rm '{}' \;
+      errmsg "openMVG_main_GlobalSfM exited with status $EXIT_CODE"
+    fi
+  fi
+}
+
+compute_structure_from_known_poses() {
+  if [ -f $SEGMENT_DIR/openMVG/robust.ply ]
+  then
+    progress "Compute Structure From Known Poses already done"
+  else
+    progress "Compute Structure From Known Poses"
+    COMPUTESTRUCTUREFROMKNOWNPOSES_OPTIONS=${COMPUTESTRUCTUREFROMKNOWNPOSES_OPTIONS:-\
+    }
+    openMVG_main_ComputeStructureFromKnownPoses \
+      -i $SEGMENT_DIR/openMVG/sfm_data.bin \
+      -m $SEGMENT_DIR/openMVG/matches \
+      -o $SEGMENT_DIR/openMVG/robust.json \
+      $COMPUTESTRUCTUREFROMKNOWNPOSES_OPTIONS
+
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -ne 0 ] ; then
+       [ -f $SEGMENT_DIR/openMVG/robust.ply ] && rm $SEGMENT_DIR/openMVG/robust.ply
+      errmsg "openMVG_main_ComputeStructureFromKnownPoses exited with status $EXIT_CODE"
+    fi
+  fi
+}
+
+openmvg2pmvs() {
+  if [ -n "$(find $SEGMENT_DIR/PMVS/ -maxdepth 1 -name pmvs_options.txt -print -quit)" ]
+  then
+    progress "PMVS directory already exist"
+  else
+    progress "Exporting to PMVS"
+    OPENMVG2PMVS_OPTIONS=${OPENMVG2PMVS_OPTIONS:-\
+    }
+    openMVG_main_openMVG2PMVS \
+      -i $SEGMENT_DIR/openMVG/robust.json \
+      -o $SEGMENT_DIR \
+      $OPENMVG2PMVS_OPTIONS
+
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -ne 0 ] ; then
+       [ -d $SEGMENT_DIR/PMVS ] && rm -r $SEGMENT_DIR/PMVS
+      errmsg "openMVG_main_openMVG2PMVS exited with status $EXIT_CODE"
+    fi
+  fi
+}
+
+cmvspmvs() {
+  if [ -n "$(find $SEGMENT_DIR/PMVS/models/ -type f -print -quit)" ]
+  then
+    progress "PMVS models directory already exist"
+  else
+   progress "running CMVS/PMVS"
+   cmvs PMVS/ 80 $NUM_THREADS \
+   && genOption PMVS/ \
+   && sed -i "s/ pmvs/ PMVS/g" PMVS/pmvs.sh \
+   && bash PMVS/pmvs.sh
+
+   EXIT_CODE=$?
+   if [ $EXIT_CODE -ne 0 ] ; then
+      [ -d $SEGMENT_DIR/PMVS/models ] && rm -r $SEGMENT_DIR/PMVS/models
+     errmsg "CMVS/PMVS exited with status $EXIT_CODE"
+   fi
+
+ fi
+}
+
+viewer() {
+  if [ -d $SEGMENT_DIR/potree ]
   then
     progress "Potree directory already exist"
   else
     progress "running viewer.sh"
     viewer.sh
 
-		EXIT_CODE=$?
-		if [ $EXIT_CODE -ne 0 ] ; then
-   	  [ -d ./potree ] && rm -r ./potree
-		  errmsg "viewer.sh exited with status $EXIT_CODE" >&2
-		fi
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -ne 0 ] ; then
+       [ -d $SEGMENT_DIR/potree ] && rm -r $SEGMENT_DIR/potree
+      errmsg "viewer.sh exited with status $EXIT_CODE" >&2
+    fi
 
   fi
+}
+
+process_segment() {
+  set -x
+  SEGMENT_DIR=$1
+  cd $SEGMENT_DIR || errmsg "no such directory: $SEGMENT_DIR"
+
+  sfm_init
+  compute_features
+  compute_matches
+  global_sfm
+  compute_structure_from_known_poses
+  openmvg2pmvs
+  cmvspmvs
+  viewer
 
 }
 
