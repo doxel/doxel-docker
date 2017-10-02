@@ -3,5 +3,5 @@
 
 docker build \
   --build-arg debian_mirror=$DEBIAN_MIRROR \
-  -t cmvs_pmvs-build \
+  -t cmvspmvs-build \
   .
