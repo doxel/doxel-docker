@@ -12,7 +12,7 @@ RUN useradd --create-home --shell /bin/bash $user \
       git
 
 USER $user
-ENV PATH $PATH:/home/$user/bin/
+ENV PATH $PATH:/home/$user/local/bin/
 
 # openMVG build options
 
