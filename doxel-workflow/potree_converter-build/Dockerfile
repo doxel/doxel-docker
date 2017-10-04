@@ -13,8 +13,9 @@ RUN useradd --create-home --shell /bin/bash $user \
       cmake \
       git
 
+COPY bin/PotreeConverter.container /usr/local/bin/PotreeConverter
+
 USER $user
-ENV PATH $PATH:/home/$user/bin/
 
 # openMVG build options
 
@@ -32,7 +33,7 @@ RUN git clone \
  && cd /home/$user/src \
  && git clone \
    --single-branch \
-   -b master \
+   -b develop \
    --recursive \
    https://github.com/potree/PotreeConverter.git \
  && cd PotreeConverter \
@@ -45,4 +46,8 @@ RUN git clone \
    .. \
  && make -j $(nproc)
 
-CMD ["/bin/bash", "-l"]
+COPY resources /home/$user/src/PotreeConverter/build/PotreeConverter/resources
+
+WORKDIR /home/$user
+
+CMD ["/bin/bash"]
