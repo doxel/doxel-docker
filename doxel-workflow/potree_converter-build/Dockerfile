@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM debian:jessie-slim
 
 ARG user=doxel
 ARG debian_mirror=deb.debian.org
@@ -13,19 +13,17 @@ RUN useradd --create-home --shell /bin/bash $user \
       cmake \
       git
 
-COPY bin/PotreeConverter.container /usr/local/bin/PotreeConverter
-
+RUN apt-get install libboost-all-dev -y
 USER $user
-
-# openMVG build options
-
 # clone build and install
 WORKDIR /home/$user/src
 RUN git clone \
    --single-branch \
    -b master \
    https://github.com/m-schuetz/LAStools.git \
- && cd LAStools/LASzip \
+ && cd LAStools \
+ && git checkout 8065ce39d50d09907691b5feda0267279428e586 \
+ && cd LASzip \
  && mkdir build \
  && cd build \
  && cmake -DCMAKE_BUILD_TYPE=Release .. \
@@ -37,6 +35,7 @@ RUN git clone \
    --recursive \
    https://github.com/potree/PotreeConverter.git \
  && cd PotreeConverter \
+ && git checkout b8c8df7914aa082ebd399798b8171ba96014bd17 \
  && mkdir build \
  && cd build \
  && cmake \
@@ -46,8 +45,11 @@ RUN git clone \
    .. \
  && make -j $(nproc)
 
+# copy our page template
 COPY resources /home/$user/src/PotreeConverter/build/PotreeConverter/resources
 
 WORKDIR /home/$user
+ENV PATH ${PATH}:/home/$user/src/PotreeConverter/build/PotreeConverter/
 
+# dont use login shell to preserve PATH
 CMD ["/bin/bash"]
