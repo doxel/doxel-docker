@@ -132,6 +132,7 @@ else
        --name $NAME \
        -it \
        --mount source=doxel-loopback,destination=$SRCDIR \
+       --mount source=doxel-mongodb,destination=/var/lib/mongodb \
        -p 3001:$PORT \
        -p 9229:9229 \
        -p 35729:35729 \
