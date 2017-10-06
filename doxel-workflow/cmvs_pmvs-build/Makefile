@@ -1,7 +1,8 @@
 all: build
+	$(MAKE) -C bin
 
 build:
-	./build.sh ; $(MAKE) -C bin
+	./build.sh
 
 install:
 	$(MAKE) -C bin install
