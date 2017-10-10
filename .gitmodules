@@ -1,9 +1,3 @@
-[submodule "doxel-workflow/openmvg-docker"]
-	path = doxel-workflow/openmvg-docker
-	url = https://github.com/doxel/openmvg-docker
 [submodule "docker-atom"]
 	path = docker-atom
 	url = https://github.com/doxel/docker-atom-editor
-[submodule "doxel-workflow/doxel-viewer"]
-	path = doxel-workflow/doxel-viewer
-	url = https://github.com/doxel/doxel-viewer
