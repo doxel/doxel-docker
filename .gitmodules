@@ -1,3 +1,6 @@
 [submodule "docker-atom"]
 	path = docker-atom
 	url = https://github.com/doxel/docker-atom-editor
+[submodule "doxel-workflow"]
+	path = doxel-workflow
+	url = https://github.com/doxel/doxel-workflow
