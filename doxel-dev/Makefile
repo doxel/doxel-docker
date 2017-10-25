@@ -6,6 +6,6 @@ build:
 	./build.sh
 
 install:
-	install -D bin/* ${INSTALL_PREFIX}/bin/
+	install -D bin/* ${INSTALL_PREFIX}/bin/.
 
 .PHONY: build install
