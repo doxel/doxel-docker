@@ -8,7 +8,7 @@ fi
 echo using nvm $NVM_VERSION
 
 if [ -z "$NODE_VERSION" ] ; then
-  if which nvm > /dev/null ; then
+  if nvm 2> /dev/null ; then
     echo get latest node LTS release number
     NODE_VERSION=$(nvm ls-remote | grep LTS | tail -n 1 | sed -r -n -e 's/.*(v[0-9\.]+).*/\1/p')
   else
