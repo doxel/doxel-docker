@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 [ -z "$DEBIAN_MIRROR" ] && DEBIAN_MIRROR=deb.debian.org
 
 if [ -z "$NVM_VERSION" ] ; then
@@ -8,7 +8,7 @@ fi
 echo using nvm $NVM_VERSION
 
 if [ -z "$NODE_VERSION" ] ; then
-  if which nvm > /dev/null ; then
+  if nvm > /dev/null 2>&1 ; then
     echo get latest node LTS release number
     NODE_VERSION=$(nvm ls-remote | grep LTS | tail -n 1 | sed -r -n -e 's/.*(v[0-9\.]+).*/\1/p')
   else
